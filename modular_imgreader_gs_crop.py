@@ -94,9 +94,7 @@ class LangchainModel:
 
 class AssessmentExtractor:
     def __init__(self, model_name, api_key, prompt, output_dir_csv, csv_file_name):
-        
-        
-        
+
         self.image_processor = ImageProcessor(
             "./assesments", "./assesments_cropped_greyscale"
         )
@@ -106,15 +104,17 @@ class AssessmentExtractor:
         self.output_dir_csv = output_dir_csv
         self.csv_file_name = csv_file_name
 
-    def run(self, crop_values):
-        
+    def run(self, crop_values, progress_callback=None):
+
         os.makedirs(self.output_dir_csv, exist_ok=True)
-        
+
         processed_images = self.image_processor.process_images(crop_values)
         b64_images = self.converter.convert_images_to_b64(processed_images)
 
         df = pd.DataFrame()
-        for b64_image in b64_images:
+        num_images = len(b64_images)
+        
+        for idx, b64_image in enumerate(b64_images):
             parsed_data = self.langchain_model.extract_assessment_data(
                 b64_image, self.prompt
             )
@@ -122,7 +122,12 @@ class AssessmentExtractor:
             temp_df = temp_df.fillna(0.0)
             df = pd.concat([df, temp_df], ignore_index=True)
 
-        output_csv_path = os.path.join(self.output_dir_csv, "{}_output.csv".format(self.csv_file_name))
+            if progress_callback:
+                progress_callback((idx + 1) / num_images * 100)  # Update progress
+
+        output_csv_path = os.path.join(
+            self.output_dir_csv, "{}_output.csv".format(self.csv_file_name)
+        )
         df.to_csv(output_csv_path, index=False)
 
 

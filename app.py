@@ -47,6 +47,8 @@ def handle_file_upload(uploaded_file, directory):
         with open(file_path, "wb") as f:
             f.write(uploaded_file.read())
         st.success(f"File {uploaded_file.name} uploaded successfully.")
+        
+        
 
 def main():
     st.title("Daadras Assessment Information Extractor")
@@ -100,25 +102,39 @@ def main():
                 output_dir_csv=csv_folder,
                 csv_file_name=zip_base_name
             )
-
-            # Process images
-            crop_values = (150, 250, 200, 90)
-            extractor.image_processor.input_dir = extraction_dir
-            extractor.image_processor.output_dir = processed_images_dir
-            extractor.run(crop_values)
             
-            output_csv_file = '{}_output.csv'.format(zip_base_name)
-            csv_file_path = os.path.join(csv_folder, output_csv_file)
+            # Create progress bar
+            progress_bar = st.progress(0)
+            progress_text = st.empty()
+            
+            def update_progress(progress):
+                progress_bar.progress(int(progress))
+                progress_text.text(f"Processing... {int(progress)}% completed")
 
-            st.write("Processing complete. Download the CSV file:")
-            with open(csv_file_path, 'rb') as f:
-                st.download_button(
-                    label="Download CSV",
-                    data=f,
-                    file_name=csv_file_path,
-                    mime="text/csv"
-                )
 
+          
+                
+            
+            
+        
+            if st.button(label="Process", type="primary"):
+                
+                crop_values = (150, 250, 200, 90)
+                extractor.image_processor.input_dir = extraction_dir
+                extractor.image_processor.output_dir = processed_images_dir
+                extractor.run(crop_values, progress_callback=update_progress)
+                # CSV file download option after processing
+                output_csv_file = '{}_output.csv'.format(zip_base_name)
+                csv_file_path = os.path.join(csv_folder, output_csv_file)
+
+                st.write("Processing complete. Download the CSV file:")
+                with open(csv_file_path, 'rb') as f:
+                    st.download_button(
+                        label="Download CSV",
+                        data=f,
+                        file_name=csv_file_path,
+                        mime="text/csv"
+                    )
     # Tab for Chess
     with tab2:
         st.header("Chess")
