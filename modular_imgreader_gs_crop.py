@@ -128,7 +128,69 @@ class AssessmentExtractor:
         output_csv_path = os.path.join(
             self.output_dir_csv, "{}_output.csv".format(self.csv_file_name)
         )
+
+        df.columns = df.columns.str.lower()
+
+        # Add a column called start time with all values at 10:05
+        df['start_time'] = '10:05'
+        
+        # Convert all values except 'name' and 'end_time' to integers
+        for col in df.columns:
+            if col not in ['name', "start_time",'end_time']:
+                df[col] = df[col].astype(int)
+
+        # Ensure 'end_time' column values do not have any alphabets
+        df['end_time'] = df['end_time'].str.replace(r'[a-zA-Z]', '', regex=True).str.strip()
+        
+        # Ensure 'end_time' has only time values and no alphabets
+        def clean_time(time_str):
+            try:
+                # Check if the time_str is in the correct format
+                pd.to_datetime(time_str, format='%H:%M')  # Updated format
+                return time_str
+            except ValueError:
+                try:
+                    pd.to_datetime(time_str, format='%I:%M %p')
+                    return time_str
+                except ValueError:
+                    return None
+        
+        df['end_time'] = df['end_time'].apply(clean_time)
+        df['start_time'] = df['start_time'].apply(clean_time)
+
+        # Replace invalid 'end_time' values with the average time
+        valid_times = pd.to_datetime(df['end_time'].dropna(), format='%H:%M')  # Updated format
+        if not valid_times.empty:
+            average_time = valid_times.mean().strftime('%I:%M %p')
+            df['end_time'] = df['end_time'].fillna(average_time)
+        
+        valid_times = pd.to_datetime(df['start_time'].dropna(), format='%H:%M')  # Updated format
+        if not valid_times.empty:
+            average_time = valid_times.mean().strftime('%I:%M %p')
+            df['start_time'] = df['start_time'].fillna(average_time)
+        
+        # Create a new column called time_taken and compute the difference between start_time and end_time in minutes
+        df['time_taken'] = (pd.to_datetime(df['end_time'], format='%H:%M') - pd.to_datetime(df['start_time'], format='%H:%M')).dt.total_seconds() / 60        
+        # Create a new column called Average performance and compute the average score for all rows using all the columns except name, end_time, and age
+        score_columns = [col for col in df.columns if col not in ['name', "start_time", "time_taken", 'end_time', 'age']]
+        df['overall_performance'] = df[score_columns].mean(axis=1)
+
+        # Bin the scores into Low, Medium, and High categories
+        def bin_scores(score):
+            if score < 3:
+                return 'Low'
+            elif 3 <= score <= 7:
+                return 'Medium'
+            else:
+                return 'High'
+
+        for col in df.columns:
+            if col not in ['name', "start_time", "time_taken", 'end_time', 'age']:
+                df[col] = df[col].apply(bin_scores)
+        
         df.to_csv(output_csv_path, index=False)
+
+        return df
 
 
 # Usage Example

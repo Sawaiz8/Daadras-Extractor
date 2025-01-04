@@ -6,7 +6,7 @@ from modular_imgreader_gs_crop import AssessmentExtractor
 api_key = os.getenv("OPENAI_API_KEY")
 
 
-prompt = """\
+prompt = """
 Extract the following information from this image: Student name, age, End time, and all of the scores in the table.
 Please be cautious with the numbers and make sure they are correctly interpreted. If a score appears as "null", replace it with 0. Ensure that the output JSON follows this format exactly:
 JSON format: 
@@ -109,20 +109,14 @@ def main():
             
             def update_progress(progress):
                 progress_bar.progress(int(progress))
-                progress_text.text(f"Processing... {int(progress)}% completed")
-
-
-          
-                
-            
-            
+                progress_text.text(f"Processing... {int(progress)}% completed")  
         
             if st.button(label="Process", type="primary"):
                 
                 crop_values = (150, 250, 200, 90)
                 extractor.image_processor.input_dir = extraction_dir
                 extractor.image_processor.output_dir = processed_images_dir
-                extractor.run(crop_values, progress_callback=update_progress)
+                df = extractor.run(crop_values, progress_callback=update_progress)
                 # CSV file download option after processing
                 output_csv_file = '{}_output.csv'.format(zip_base_name)
                 csv_file_path = os.path.join(csv_folder, output_csv_file)
@@ -135,6 +129,75 @@ def main():
                         file_name=csv_file_path,
                         mime="text/csv"
                     )
+                
+                # Compute descriptive statistics
+                def remove_outliers(series):
+                    q1 = series.quantile(0.25)
+                    q3 = series.quantile(0.75)
+                    iqr = q3 - q1
+                    lower_bound = q1 - 1.5 * iqr
+                    upper_bound = q3 + 1.5 * iqr
+                    return series[(series >= lower_bound) & (series <= upper_bound)]
+
+                age_no_outliers = remove_outliers(df['age'])
+                time_taken_no_outliers = remove_outliers(df['time_taken'])
+
+                average_age = age_no_outliers.mean()
+                median_age = age_no_outliers.median()
+                std_age = age_no_outliers.std()
+
+                average_time_taken = time_taken_no_outliers.mean()
+                median_time_taken = time_taken_no_outliers.median()
+                std_time_taken = time_taken_no_outliers.std()
+
+                max_time_taken = df['time_taken'].max()
+                min_time_taken = df['time_taken'].min()
+                total_students = df.shape[0]
+
+                st.write("## Descriptive Statistics")
+                col1, col2, col3 = st.columns(3)
+                col1.write("**Total Students**")
+                col1.write(f"{total_students}")
+                col2.write("**Average Age**")
+                col2.write(f"{average_age:.2f}")
+                col3.write("**Median Age**")
+                col3.write(f"{median_age:.2f}")
+                col1.write("**Standard Deviation Age**")
+                col1.write(f"{std_age:.2f}")
+                col2.write("**Maximum TT**")
+                col2.write(f"{max_time_taken:.2f} mins")
+                col3.write("**Minimum TT**")
+                col3.write(f"{min_time_taken:.2f} mins")
+                col1.write("**Average TT**")
+                col1.write(f"{average_time_taken:.2f} mins")
+                col2.write("**Median TT**")
+                col2.write(f"{median_time_taken:.2f} mins")
+                col3.write("**Standard Deviation TT**")
+                col3.write(f"{std_time_taken:.2f} mins")
+
+                # Calculate the mode category for all columns except name, age, start_time, end_time, and overall_performance
+                mode_categories = df.drop(columns=['name', 'age', 'start_time', 'end_time', "time_taken"]).mode().iloc[0]
+
+                st.write("## Average Performance Statistics")
+                col1, col2, col3 = st.columns(3)
+                for idx, (category, mode) in enumerate(mode_categories.items()):
+                    category_title = category.title()
+                    if idx % 3 == 0:
+                        col1.write(f"**{category_title}**")
+                        col1.write(f"{mode}")
+                    elif idx % 3 == 1:
+                        col2.write(f"**{category_title}**")
+                        col2.write(f"{mode}")
+                    else:
+                        col3.write(f"**{category_title}**")
+                        col3.write(f"{mode}")
+
+                # Count the number of students in each performance category
+                performance_counts = df['overall_performance'].value_counts()
+
+                st.write("### Performance Distribution:")
+                st.bar_chart(performance_counts)
+
     # Tab for Chess
     with tab2:
         st.header("Chess")
