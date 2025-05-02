@@ -1,0 +1,44 @@
+services:
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    ports:
+      - $MONGO_PORT:$MONGO_PORT
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: $MONGO_INITDB_ROOT_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $MONGO_INITDB_ROOT_PASSWORD
+      MONGO_INITDB_DATABASE: $MONGO_INITDB_DATABASE
+
+  mongo_express:
+    image: mongo-express
+    container_name: mongo_express
+    restart: always
+    ports:
+      - $MONGO_EXPRESS_PORT:$MONGO_EXPRESS_PORT
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: $MONGO_INITDB_ROOT_USERNAME
+      ME_CONFIG_MONGODB_ADMINPASSWORD: $MONGO_INITDB_ROOT_PASSWORD
+      ME_CONFIG_MONGODB_SERVER: $MONGO_HOST
+    depends_on:
+      - mongo
+  
+  streamlit:
+    build: services/streamlit
+    command: sh ./docker-entrypoint.sh
+    container_name: streamlit
+    ports:
+      - $STREAMLIT_PORT:$STREAMLIT_PORT
+    volumes:
+      - ./services/streamlit:/app
+    depends_on:
+      - mongo
+    environment:
+      MONGO_HOST: $MONGO_HOST
+      MONGO_PORT: $MONGO_PORT
+      MONGO_INITDB_ROOT_USERNAME: $MONGO_INITDB_ROOT_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $MONGO_INITDB_ROOT_PASSWORD
+      MONGO_INITDB_DATABASE: $MONGO_INITDB_DATABASE
+      MONGO_URL: $MONGO_URL
+    restart: always
