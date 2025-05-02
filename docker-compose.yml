@@ -24,14 +24,14 @@ services:
     depends_on:
       - mongo
   
-  streamlit:
-    build: services/streamlit
+  assessment_dashboard:
+    build: services/assessment_dashboard
     command: sh ./docker-entrypoint.sh
-    container_name: streamlit
+    container_name: assessment_dashboard
     ports:
       - $STREAMLIT_PORT:$STREAMLIT_PORT
     volumes:
-      - ./services/streamlit:/app
+      - ./services/assessment_dashboard:/app
     depends_on:
       - mongo
     environment:
