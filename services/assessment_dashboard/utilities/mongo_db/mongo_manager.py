@@ -1,9 +1,6 @@
 from pymongo import MongoClient
 from typing import List, Dict
-from datetime import datetime
 import os
-from datetime import datetime, timedelta
-
 
 class MongoDBManager:
     def __init__(self, uri=os.getenv("MONGO_URL"), db_name=os.getenv("MONGO_INITDB_DATABASE")):
@@ -115,21 +112,27 @@ class MongoDBManager:
 
 
     @db_connection
-    async def delete_session(self, session_name: str) -> None:
+    async def delete_session_data(self, session_name: str) -> None:
         # Delete the session document
         self.sessions_data_collection.delete_one({"session_name": session_name})
         # Delete all students associated with the session
         self.students_data_collection.delete_many({"session_name": session_name})
 
     @db_connection
-    async def update_student_fields(self, student_id: int, update_fields: Dict) -> None:
+    async def update_student_fields(self, session_name: str, section_name: str, student_id: int, update_fields: Dict) -> None:
         """
         Update individual fields for a student document.
+        :param session_name: The name of the session the student belongs to.
+        :param section_name: The name of the section the student belongs to.
         :param student_id: The ID of the student to update.
         :param update_fields: A dictionary of fields to update.
         """
         self.students_data_collection.update_one(
-            {"student_id": student_id},
+            {
+                "session_name": session_name,
+                "section_name": section_name,
+                "student_id": student_id
+            },
             {"$set": update_fields}
         )
 

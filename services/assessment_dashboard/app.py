@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit_authenticator as stauth
-from pages.Session_creator import session_creator_page
-from pages.Session_updater import data_ingestion_page
+from pages.session_creator import session_creator_page
+from pages.data_ingestion import data_ingestion_page
 from pages.session_section import sess_section_page
 from main.database import mongo_store
 import asyncio

@@ -203,7 +203,7 @@ def sess_section_page():
                     }
 
                     if update_fields:
-                        asyncio.run(mongo_store.update_student_fields(selected_student_details['student_id'], update_fields))
+                        asyncio.run(mongo_store.update_student_fields(session_selector, selected_section, selected_student_details['student_id'], update_fields))
                         st.success("Student information updated successfully!")
                         st.session_state["show_update_form"] = False
                         st.rerun()

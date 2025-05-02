@@ -5,13 +5,9 @@ import pandas as pd
 import json
 import os
 from PIL import Image
-from dotenv import load_dotenv
-
-
-load_dotenv()
+from prompts import prompt
 
 api_key = os.getenv("OPENAI_API_KEY")
-
 
 class ImageProcessor:
     def __init__(self, input_dir, output_dir):
@@ -101,8 +97,6 @@ class AssessmentExtractor:
         self.converter = Base64Converter()
         self.langchain_model = LangchainModel(model_name, api_key)
         self.prompt = prompt
-        self.output_dir_csv = output_dir_csv
-        self.csv_file_name = csv_file_name
 
     def run(self, crop_values, progress_callback=None):
 
@@ -188,38 +182,14 @@ class AssessmentExtractor:
             if col not in ['name', "start_time", "time_taken", 'end_time', 'age']:
                 df[col] = df[col].apply(bin_scores)
         
-        df.to_csv(output_csv_path, index=False)
+        print(df.columns)
 
         return df
 
+crop_values = (150, 250, 200, 90)
+extractor = AssessmentExtractor(
+    model_name="gpt-4o",
+    api_key=api_key,
+    prompt=prompt,
+)
 
-# Usage Example
-if __name__ == "__main__":
-
-    prompt = """\
-    Extract the following information from this image: Student name, age, End time, and all of the scores in the table.
-    Please be cautious with the numbers and make sure they are correctly interpreted. If a score appears as "null", replace it with 0. Ensure that the output JSON follows this format exactly:
-    JSON format: 
-    {
-        "name": "<name>",
-        "age": <age>,
-        "end_time": "<time>",
-        "AI(Artificial Intelligence)": <score>,
-        "Canva": <score>,
-        "Turtle Programming": <score>,
-        "Scratch Programming": <score>,
-        "Account Creation": <score>,
-        "English Comprehension": <score>,
-        "Urdu Comprehension": <score>,
-        "Hardware/Games/Internet": <score>,
-        "Basic Navigation": <score>,
-        "Environmental Questions": <score>
-    }
-    """
-    crop_values = (150, 250, 200, 90)
-    extractor = AssessmentExtractor(
-        model_name="gpt-4o",
-        api_key=api_key,
-        prompt=prompt,
-    )
-    extractor.run(crop_values)

@@ -16,7 +16,7 @@ def data_ingestion_page():
             written_exam_template = create_written_exam_template(students, selected_section)
             st.download_button("Download Written Exam Scores Template", written_exam_template, "written_exam_template.zip", "application/zip")
             written_exam_zip = st.file_uploader("Upload Written Exam Scores (ZIP)", type="zip", key="written_exam_zip")
-            
+
             st.subheader("Viva Audio Files")
             viva_audio_template = create_viva_audio_template(students, selected_section)
             st.download_button("Download Viva Audio Files Template", viva_audio_template, "viva_audio_template.zip", "application/zip")

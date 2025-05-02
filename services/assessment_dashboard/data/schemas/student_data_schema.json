@@ -1,0 +1,67 @@
+{
+    "id": null,
+    "first_name": null,
+    "middle_name": null,
+    "last_name": null,
+    "age": null,
+    "gender": null,
+    "session_name": null,
+    "section_name": null,
+    "classes_attended": null,
+    "email": null,
+    "contact_number": null,
+    "city": null,
+    "address": null,
+    "pre_test_data": {
+        "written_exam_scores": {
+            "written_ai_section_score": null,
+            "written_env_score": null,
+            "written_internet_score": null,
+            "written_canva_score": null,
+            "written_programming_score": null,
+            "written_hardware_software_score": null,
+            "other_new_section_score_aggregated": null,
+            "total_student_marks": null,
+            "total_marks_of_exam": null,
+            "start_time_exam": null,
+            "end_time_exam": null
+        },
+        "viva": {
+            "transcript": null,
+            "analysis": null,
+            "duration": null
+        },
+        "practical_exam_reports": {
+            "report": null,
+            "analysis": null,
+            "start_time_exam": null,
+            "end_time_exam": null
+        }
+    },
+    "post_test_data": {
+         "written_exam_scores": {
+            "written_ai_section_score": null,
+            "written_env_score": null,
+            "written_internet_score": null,
+            "written_canva_score": null,
+            "written_programming_score": null,
+            "written_hardware_software_score": null,
+            "other_new_section_score_aggregated": null,
+            "total_student_marks": null,
+            "total_marks_of_exam": null,
+            "start_time_exam": null,
+            "end_time_exam": null
+        },
+        "viva": {
+            "transcript": null,
+            "analysis": null,
+            "duration": null
+        },
+        "practical_exam_reports": {
+            "report": null,
+            "analysis": null,
+            "start_time_exam": null,
+            "end_time_exam": null
+        }
+   }
+}
