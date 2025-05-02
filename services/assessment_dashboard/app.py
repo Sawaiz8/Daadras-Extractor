@@ -1,11 +1,10 @@
 import streamlit as st
 import streamlit_authenticator as stauth
 from pages.Session_creator import session_creator_page
-from pages.Session_updater import session_updater_page
+from pages.Session_updater import data_ingestion_page
 from pages.session_section import sess_section_page
 from main.database import mongo_store
 import asyncio
-from utilities.create_attendance_sheet import save_attendance_pdf
 
 # Initialize session state for authentication status
 if "authentication_status" not in st.session_state:
@@ -80,19 +79,18 @@ if st.session_state["authentication_status"]:
                 
 
     st.session_state["sessions"] = sessions
-
     st.sidebar.divider()
     st.sidebar.caption("Create Session")
 
     if st.sidebar.button(label="Project Management"):
         st.session_state["on_page"] = "Create Session"
-    if st.sidebar.button(label="Update Data"):
-        st.session_state["on_page"] = "Update Session"
+    if st.sidebar.button(label="Data Ingestion"):
+        st.session_state["on_page"] = "Data Ingestion"
 
     if st.session_state["on_page"] == "Create Session":
         session_creator_page()
-    elif st.session_state["on_page"] == "Update Session":
-        session_updater_page()
+    elif st.session_state["on_page"] == "Data Ingestion":
+        data_ingestion_page()
     elif st.session_state["on_page"] == "Session Section":
         sess_section_page()
 
