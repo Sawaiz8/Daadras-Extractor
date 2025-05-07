@@ -1,7 +1,7 @@
 import asyncio
 from main.database import mongo_store
 import streamlit as st
-from utilities.create_attendance_sheet import save_attendance_pdf
+from controllers.session_section import save_attendance_pdf
 
 def sess_section_page():
     session_selector = st.session_state["selected_session"]

@@ -1,12 +1,9 @@
 import streamlit as st
-from shutil import rmtree
-from time import sleep
-import os
 from main.database import mongo_store
 import asyncio
 from utilities.utils import load_file_as_dataframe
 import json
-
+import pandas as pd
 
 with open('data/schemas/student_data_schema.json', 'r') as schema_file:
     base_student_data = json.load(schema_file)
@@ -63,6 +60,11 @@ def session_creator_page():
             if uploaded_file is not None:
 
                 df = load_file_as_dataframe(uploaded_file)
+                # Clean all string columns by removing empty spaces and special characters
+                for col in df.select_dtypes(include=['object']).columns:
+                    df[col] = df[col].str.replace(r'[^a-zA-Z0-9\s]', '', regex=True).str.strip()
+                    df[col] = df[col].replace('', pd.NA)
+
                 if df is None:
                     st.error(f"Unsupported file format for {section_name} sheet")
                     continue

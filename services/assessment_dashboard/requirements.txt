@@ -7,3 +7,5 @@ reportlab
 langchain-core==0.2.38
 langchain-openai==0.1.23
 langsmith==0.1.117
+diffq==0.2.4
+demucs==4.0.1
