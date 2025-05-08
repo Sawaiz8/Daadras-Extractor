@@ -91,7 +91,7 @@ class AssessmentExtractor:
             parsed_data = self.langchain_model.extract_assessment_data(
                 b64_image, self.prompt
             )
-            parsed_data['ID'] = image_id  # Add the extracted ID to the parsed data
+            parsed_data['id'] = image_id  # Add the extracted ID to the parsed data
             
             temp_df = pd.DataFrame([parsed_data])
             temp_df = temp_df.fillna(0.0)

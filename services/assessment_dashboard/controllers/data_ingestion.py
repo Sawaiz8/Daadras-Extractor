@@ -13,6 +13,7 @@ import zipfile
 import tempfile
 import streamlit as st
 from functools import reduce
+import json
 
 
 def get_data_file_paths(temp_data_dir):
@@ -130,36 +131,73 @@ def extract_viva_exam_data(viva_exam_audio_file_paths):
     return transcriptions_dataframe
 
 def merge_dataframes_on_id(dataframes):
-    merged_dataframe = reduce(lambda left, right: pd.merge(left, right, on='id', how='left'), dataframes)
+    if not dataframes:
+        return pd.DataFrame()
+        
+    # Get all unique IDs across all dataframes
+    all_ids = set()
+    for df in dataframes:
+        all_ids.update(df['id'].unique())
+    
+    # Create base dataframe with all IDs
+    base_df = pd.DataFrame({'id': list(all_ids)})
+    
+    # Merge each dataframe with outer join to keep all IDs
+    merged_dataframe = base_df
+    for df in dataframes:
+        merged_dataframe = pd.merge(merged_dataframe, df, on='id', how='outer')
+    
+    # Fill missing values with None/NaN
+    merged_dataframe = merged_dataframe.fillna(pd.NA)
+    
     return merged_dataframe
 
-def save_data_for_exam_type(dataframe, session_name, section_name, exam_type = "pre_test_data"):
-    updates = [
-        (
-            int(row['id']),
-            {
-                exam_type: {
-                    "written_exam_scores": row.to_dict(),
-                    "viva": {
-                        "transcript": None,
-                        "analysis": None,
-                        "duration": None
-                    },
-                    "practical_exam_reports": {
-                        "report": None,
-                        "analysis": None,
-                        "start_time_exam": None,
-                        "end_time_exam": None
-                    }
-                }
-            }
-        )
-        for _, row in dataframe.iterrows()
-    ]
+def save_data_for_exam_type(dataframes, session_name, section_name, exam_type = "pre_test_data"):
+    written_df = dataframes.get("written")
+    viva_df = dataframes.get("viva")
+    practical_df = dataframes.get("practical")
+
+    # Load schema from JSON file
+    with open("data/schemas/student_data_schema.json", "r") as f:
+        schema = json.load(f)
+
+    if written_df is None and viva_df is None and practical_df is None:
+        return
+
+    # Get all unique IDs
+    all_ids = set()
+    if written_df is not None:
+        all_ids.update(written_df['id'].unique())
+    if viva_df is not None:
+        all_ids.update(viva_df['id'].unique())
+    if practical_df is not None:
+        all_ids.update(practical_df['id'].unique())
+
+    updates = []
+    for student_id in all_ids:
+
+        update = (int(student_id), dict())
+
+        written_row = None if written_df is None else written_df[written_df['id'] == student_id].iloc[0] if not written_df[written_df['id'] == student_id].empty else None
+        viva_row = None if viva_df is None else viva_df[viva_df['id'] == student_id].iloc[0] if not viva_df[viva_df['id'] == student_id].empty else None
+        practical_row = None if practical_df is None else practical_df[practical_df['id'] == student_id].iloc[0] if not practical_df[practical_df['id'] == student_id].empty else None
+        
+        if written_row is not None:
+            written_scores = written_row.to_dict()
+            update[1][f"{exam_type}.written_exam_scores"] =  written_scores
+
+        if viva_row is not None:
+            viva_data = viva_row.to_dict()
+            update[1][f"{exam_type}.viva"] =  viva_data
+
+        if practical_row is not None:
+            practical_data = practical_row.to_dict()
+            update[1][f"{exam_type}.practical_exam_reports"] =  practical_data
+
+        updates.append(update)
+    
     for student_id, update_data in updates:
         asyncio.run(mongo_store.update_student_fields(session_name, section_name, student_id, update_data))
-
-
 
 def process_student_data(exam_data_zip, session_name, section_name):
     with tempfile.TemporaryDirectory() as temp_data_dir:
@@ -179,29 +217,31 @@ def process_student_data(exam_data_zip, session_name, section_name):
                 viva_exam_audio_file_paths_post_test
             ) = get_data_file_paths(temp_data_dir)
 
-            dataframes = []
-            if viva_exam_audio_file_paths_pre_test:
-               viva_exam_dataframe_pre_test = extract_viva_exam_data(viva_exam_audio_file_paths_pre_test)
-               dataframes.append(viva_exam_dataframe_pre_test)
+
+
+            dataframes = {"viva": None, "written": None, "practical": None}
             if written_exam_image_file_paths_pre_test:
                written_exam_dataframe_pre_test = extract_written_exam_data(written_exam_image_file_paths_pre_test)
-               dataframes.append(written_exam_dataframe_pre_test)
+               dataframes["written"] = written_exam_dataframe_pre_test
+            if viva_exam_audio_file_paths_pre_test:
+               viva_exam_dataframe_pre_test = extract_viva_exam_data(viva_exam_audio_file_paths_pre_test)
+               dataframes["viva"] = viva_exam_dataframe_pre_test
             if dataframes:
-                pre_test_merged_dataframe = merge_dataframes_on_id(dataframes)
-                st.write("pre_test_merged_dataframe", pre_test_merged_dataframe)
-                # save_data_for_exam_type(merged_dataframe, session_name, section_name, exam_type="pre_test_data")
+                save_data_for_exam_type(dataframes, session_name, section_name, exam_type="pre_test_data")
 
-            dataframes = []
+            dataframes = {"viva": None, "written": None, "practical": None}
             if written_exam_image_file_paths_post_test:
                written_exam_dataframe_post_test = extract_written_exam_data(written_exam_image_file_paths_post_test)
-               dataframes.append(written_exam_dataframe_post_test)
+               dataframes["written"] = written_exam_dataframe_post_test
             if viva_exam_audio_file_paths_post_test:
                viva_exam_dataframe_post_test = extract_viva_exam_data(viva_exam_audio_file_paths_post_test)
-               dataframes.append(viva_exam_dataframe_post_test)
+               dataframes["viva"] = viva_exam_dataframe_post_test
+            # if practical_exam_image_file_paths_post_test:
+            #    practical_exam_dataframe_post_test = extract_practical_exam_data(practical_exam_image_file_paths_post_test)
+            #    st.write("practical_exam_dataframe_post_test", practical_exam_dataframe_post_test)
+            #    dataframes["practical"] = practical_exam_dataframe_post_test
             if dataframes:
-                post_test_merged_dataframe = merge_dataframes_on_id(dataframes)
-                st.write("post_test_merged_dataframe", post_test_merged_dataframe)
-                # save_data_for_exam_type(merged_dataframe, session_name, section_name, exam_type="post_test_data")
+                save_data_for_exam_type(dataframes, session_name, section_name, exam_type="post_test_data")
 
         else:
             st.error("Folder structure is not correct")

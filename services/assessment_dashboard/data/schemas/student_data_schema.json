@@ -27,9 +27,9 @@
             "end_time_exam": null
         },
         "viva": {
-            "transcript": null,
-            "analysis": null,
-            "duration": null
+            "urdu_transcription": null,
+            "english_translation_for_urdu_transcription": null,
+            "duration_in_seconds": null
         },
         "practical_exam_reports": {
             "report": null,

@@ -1,16 +1,19 @@
 import requests
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from pydub import AudioSegment
 import pandas as pd
+import streamlit as st
+import os
+
 class AudioTranscriptionTranslator:
     def __init__(self):
         self.transcription_url = "https://api.openai.com/v1/audio/transcriptions"
-        self.chat = ChatOpenAI(
+        self.model = ChatOpenAI(
             model_name="gpt-4o-mini",
             temperature=0,
         )
-        self.translation_prompt = PromptTemplate.from_template(
+        self.translation_prompt = PromptTemplate(
             input_variables=["text"],
             template="Translate the following Urdu text to English: {text}"
         )
@@ -18,7 +21,7 @@ class AudioTranscriptionTranslator:
     def get_transcription(self, audio_file_path):
         """Get transcription from audio file"""
         headers = {
-            "Authorization": f"Bearer {self.api_key}"
+            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"
         }
 
         with open(audio_file_path, "rb") as audio_file:
@@ -43,8 +46,8 @@ class AudioTranscriptionTranslator:
 
     def translate_to_english(self, text):
         """Translate text to English"""
-        messages = self.translation_prompt.format_messages(text=text)
-        response = self.chat(messages)
+        prompt = self.translation_prompt.format(text=text)
+        response = self.model.invoke(prompt)
         return response.content
 
     def get_audio_duration(self, audio_file_path):
@@ -66,13 +69,12 @@ class AudioTranscriptionTranslator:
             return None
 
 
-    def transcribe_and_translate(self, audio_file_path, image_id):
-        """Get transcription and translation in one go"""'
+    def transcribe_and_translate(self, audio_file_path, id):
         duration_in_seconds = self.get_audio_duration(audio_file_path)
         urdu_transcription = self.get_transcription(audio_file_path)
         english_translation_for_urdu_transcription = self.translate_to_english(urdu_transcription)
         return {
-            "image_id": image_id,
+            "id": id,
             "urdu_transcription": urdu_transcription,
             "english_translation_for_urdu_transcription": english_translation_for_urdu_transcription,
             "duration_in_seconds": duration_in_seconds
@@ -91,13 +93,15 @@ class AudioTranscriptionTranslator:
         results = []
         for audio_path in audio_file_paths:
             try:
-                image_id = audio_path.split("/")[-4].split("_")[0]
-                result = self.transcribe_and_translate(audio_path, image_id)
+                id = audio_path.split("/")[-4].split("_")[0]
+                st.write(f"Transcribing and translating {audio_path} with id {id}")
+                result = self.transcribe_and_translate(audio_path, id)
+                st.write(f"Result: {result}")
                 results.append(result)
             except Exception as e:
-                print(f"Error processing {audio_path}: {str(e)}")
+                st.write(f"Error processing {audio_path}: {str(e)}")
                 results.append({
-                    "image_id": image_id,
+                    "id": id,
                     "urdu_transcription": None,
                     "english_translation_for_urdu_transcription": None,
                     "duration_in_seconds": None

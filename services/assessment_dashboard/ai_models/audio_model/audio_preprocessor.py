@@ -17,10 +17,10 @@ class AudioPreprocessor:
 
     def clean_audio_with_demucs(self, input_file, output_file):
         # Run demucs using subprocess with the old default model
-        subprocess.run(["demucs", "-n", "mdx_extra_q", input_file])
+        subprocess.run(["demucs", input_file])
 
         # Move the vocal output to a target cleaned file
-        vocals_path = f"separated/mdx_extra_q/{input_file.split('/')[-1].replace('.wav', '')}/vocals.wav"
+        vocals_path = f"separated/htdemucs/{input_file.split('/')[-1].replace('.wav', '')}/vocals.wav"
         shutil.copy(vocals_path, output_file)
 
         # Delete the entire demucs output folder structure

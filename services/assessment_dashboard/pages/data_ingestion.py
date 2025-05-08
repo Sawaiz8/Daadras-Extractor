@@ -1,7 +1,7 @@
 import streamlit as st
 from main.database import mongo_store
 import asyncio
-from controllers.data_ingestion import create_score_template, written_exam_image_file_paths
+from controllers.data_ingestion import create_score_template
 from controllers.data_ingestion import process_student_data
 
 
