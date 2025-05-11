@@ -62,3 +62,4 @@ google_drive_downloader.log
 *.csv
 .env
 __pycache__/
+.streamlit/secrets.toml
