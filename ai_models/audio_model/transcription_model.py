@@ -94,9 +94,7 @@ class AudioTranscriptionTranslator:
         for audio_path in audio_file_paths:
             try:
                 id = audio_path.split("/")[-4].split("_")[0]
-                st.write(f"Transcribing and translating {audio_path} with id {id}")
                 result = self.transcribe_and_translate(audio_path, id)
-                st.write(f"Result: {result}")
                 results.append(result)
             except Exception as e:
                 st.write(f"Error processing {audio_path}: {str(e)}")
