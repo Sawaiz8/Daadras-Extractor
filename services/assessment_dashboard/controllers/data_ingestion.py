@@ -5,7 +5,7 @@ import os
 from main.database import mongo_store
 import asyncio
 import os
-from ai_models.ocr_model.ocr import extractor
+from ai_models.ocr_model.ocr import written_exam_extractor, practical_exam_extractor
 from ai_models.audio_model.audio_preprocessor import audio_preprocessor
 from ai_models.audio_model.transcription_model import transcription_model
 import shutil
@@ -13,7 +13,6 @@ import zipfile
 import tempfile
 import streamlit as st
 from functools import reduce
-import json
 
 
 def get_data_file_paths(temp_data_dir):
@@ -122,13 +121,17 @@ def get_student_folder_name(student):
 
 
 def extract_written_exam_data(written_exam_image_file_paths):
-    written_exam_dataframe = extractor.run(written_exam_image_file_paths)
+    written_exam_dataframe = written_exam_extractor.run_written_exam_flow(written_exam_image_file_paths)
     return written_exam_dataframe
 
 def extract_viva_exam_data(viva_exam_audio_file_paths):
     cleaned_audio_file_paths = audio_preprocessor.clean_audio_files(viva_exam_audio_file_paths)
     transcriptions_dataframe = transcription_model.transcribe_and_translate_audio_files(cleaned_audio_file_paths)
     return transcriptions_dataframe
+
+def extract_practical_exam_data(practical_exam_image_file_paths):
+    practical_exam_dataframe = practical_exam_extractor.run_practical_exam_flow(practical_exam_image_file_paths)
+    return practical_exam_dataframe
 
 def merge_dataframes_on_id(dataframes):
     if not dataframes:
@@ -156,10 +159,6 @@ def save_data_for_exam_type(dataframes, session_name, section_name, exam_type = 
     written_df = dataframes.get("written")
     viva_df = dataframes.get("viva")
     practical_df = dataframes.get("practical")
-
-    # Load schema from JSON file
-    with open("data/schemas/student_data_schema.json", "r") as f:
-        schema = json.load(f)
 
     if written_df is None and viva_df is None and practical_df is None:
         return
@@ -216,9 +215,6 @@ def process_student_data(exam_data_zip, session_name, section_name):
                 viva_exam_audio_file_paths_pre_test, 
                 viva_exam_audio_file_paths_post_test
             ) = get_data_file_paths(temp_data_dir)
-
-
-
             dataframes = {"viva": None, "written": None, "practical": None}
             if written_exam_image_file_paths_pre_test:
                written_exam_dataframe_pre_test = extract_written_exam_data(written_exam_image_file_paths_pre_test)
@@ -226,6 +222,10 @@ def process_student_data(exam_data_zip, session_name, section_name):
             if viva_exam_audio_file_paths_pre_test:
                viva_exam_dataframe_pre_test = extract_viva_exam_data(viva_exam_audio_file_paths_pre_test)
                dataframes["viva"] = viva_exam_dataframe_pre_test
+            if practical_exam_image_file_paths_pre_test:
+               practical_exam_dataframe_pre_test = extract_practical_exam_data(practical_exam_image_file_paths_pre_test)
+               st.write("practical_exam_dataframe_pre_test", practical_exam_dataframe_pre_test)
+               dataframes["practical"] = practical_exam_dataframe_pre_test
             if dataframes:
                 save_data_for_exam_type(dataframes, session_name, section_name, exam_type="pre_test_data")
 
@@ -236,10 +236,10 @@ def process_student_data(exam_data_zip, session_name, section_name):
             if viva_exam_audio_file_paths_post_test:
                viva_exam_dataframe_post_test = extract_viva_exam_data(viva_exam_audio_file_paths_post_test)
                dataframes["viva"] = viva_exam_dataframe_post_test
-            # if practical_exam_image_file_paths_post_test:
-            #    practical_exam_dataframe_post_test = extract_practical_exam_data(practical_exam_image_file_paths_post_test)
-            #    st.write("practical_exam_dataframe_post_test", practical_exam_dataframe_post_test)
-            #    dataframes["practical"] = practical_exam_dataframe_post_test
+            if practical_exam_image_file_paths_post_test:
+               practical_exam_dataframe_post_test = extract_practical_exam_data(practical_exam_image_file_paths_post_test)
+               st.write("practical_exam_dataframe_post_test", practical_exam_dataframe_post_test)
+               dataframes["practical"] = practical_exam_dataframe_post_test
             if dataframes:
                 save_data_for_exam_type(dataframes, session_name, section_name, exam_type="post_test_data")
 

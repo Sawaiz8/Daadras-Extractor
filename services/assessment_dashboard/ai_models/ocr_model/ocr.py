@@ -5,10 +5,9 @@ import pandas as pd
 import json
 import os
 from PIL import Image
-from .prompts import prompt
+from .prompts import written_exam_prompt, practical_exam_prompt
 import streamlit as st
 
-api_key = os.getenv("OPENAI_API_KEY")
 
 class ImageProcessor:
     def __init__(self):
@@ -39,8 +38,8 @@ class Base64Converter:
         return [self.image_to_b64(image) for image in image_paths]
 
 class LangchainModel:
-    def __init__(self, model_name, api_key):
-        self.model = ChatOpenAI(model=model_name, api_key=api_key, temperature=0)
+    def __init__(self, model_name):
+        self.model = ChatOpenAI(model_name=model_name, temperature=0)
 
     def extract_assessment_data(self, b64_image, prompt):
         message = HumanMessage(
@@ -63,19 +62,18 @@ class LangchainModel:
             .replace("json", "")
             .strip()
         )
-        print(clean_json_string)
         return json.loads(clean_json_string)
 
 
 class AssessmentExtractor:
-    def __init__(self, model_name, api_key, prompt):
+    def __init__(self, model_name, prompt):
 
         self.image_processor = ImageProcessor()
         self.converter = Base64Converter()
-        self.langchain_model = LangchainModel(model_name, api_key)
+        self.langchain_model = LangchainModel(model_name)
         self.prompt = prompt
 
-    def run(self, image_paths, progress_callback=None):
+    def run_written_exam_flow(self, image_paths, progress_callback=None):
 
         processed_images = self.image_processor.process_images(image_paths)
         b64_images = self.converter.convert_images_to_b64(processed_images)
@@ -150,9 +148,43 @@ class AssessmentExtractor:
         
         return df
 
-extractor = AssessmentExtractor(
+    def run_practical_exam_flow(self, image_paths, progress_callback=None):
+        processed_images = self.image_processor.process_images(image_paths)
+        b64_images = self.converter.convert_images_to_b64(processed_images)
+
+        df = pd.DataFrame()
+        num_images = len(b64_images)
+        
+        for idx, b64_image in enumerate(b64_images):
+            # Extract the ID from the image path
+            image_path = processed_images[idx]
+            image_id = image_path.split("/")[-4].split("_")[0]
+            
+            parsed_data = self.langchain_model.extract_assessment_data(
+                b64_image, self.prompt
+            )
+            parsed_data['id'] = image_id  # Add the extracted ID to the parsed data
+            
+            temp_df = pd.DataFrame([parsed_data])
+            temp_df = temp_df.fillna(None)
+            df = pd.concat([df, temp_df], ignore_index=True)
+
+            if progress_callback:
+                progress_callback((idx + 1) / num_images * 100)  # Update progress
+
+        df.columns = df.columns.str.lower()
+
+        return df
+        
+        
+
+written_exam_extractor = AssessmentExtractor(
     model_name="gpt-4o",
-    api_key=api_key,
-    prompt=prompt,
+    prompt=written_exam_prompt,
+)
+
+practical_exam_extractor = AssessmentExtractor(
+    model_name="gpt-4o",
+    prompt=practical_exam_prompt,
 )
 

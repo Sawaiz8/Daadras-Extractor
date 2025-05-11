@@ -3,7 +3,7 @@ from typing import List, Dict
 import os
 
 class MongoDBManager:
-    def __init__(self, uri=os.getenv("MONGO_URL"), db_name=os.getenv("MONGO_INITDB_DATABASE")):
+    def __init__(self, uri=os.getenv("MONGO_DB_ATLAS_URI"), db_name=os.getenv("MONGO_INITDB_DATABASE")):
         self.uri = uri
         self.db_name = db_name
         self.client = None

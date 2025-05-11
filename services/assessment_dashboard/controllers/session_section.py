@@ -90,3 +90,14 @@ def save_attendance_pdf(student_dict, program_name, section, output_file_path, r
     c.line(410, y, 410, y + 20)  # Final vertical line between Gender and Attendance
     
     c.save()
+
+
+def format_student_name(student):
+    first_name = student.get('first_name', '')
+    middle_name = student.get('middle_name', '')
+    last_name = student.get('last_name', '')
+    # Only include middle name if it is not None or NaN
+    if middle_name and str(middle_name).lower() != 'nan':
+        return f"{first_name} {middle_name} {last_name}".strip()
+    else:
+        return f"{first_name} {last_name}".strip()

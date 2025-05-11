@@ -12,7 +12,7 @@ with open('data/schemas/session_data_schema.json', 'r') as session_file:
     base_session_data = json.load(session_file)
 
 def session_creator_page():
-    st.title("Project Management")
+    st.title("Session Management")
 
     # Create new session
     st.header("Create a New Session")
@@ -91,6 +91,7 @@ def session_creator_page():
 
         if new_session_name and school_name and school_location:
             asyncio.run(mongo_store.upsert_session_data(session_data))
+            st.cache_data.clear()
             st.success("Session created successfully")
             st.rerun()
         else:
@@ -104,8 +105,10 @@ def session_creator_page():
     if delete_selector and delete_button:
         try:
             asyncio.run(mongo_store.delete_session_data(delete_selector))
+            st.cache_data.clear()
             st.success("Session Deleted Successfully!")
             st.rerun()
+
         except OSError as e:
             st.error("Error deleting session!")
             st.write(e)
