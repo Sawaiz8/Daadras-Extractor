@@ -12,8 +12,6 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements and install dependencies
 COPY requirements.txt .
 RUN pip3 --no-cache-dir install -r requirements.txt
-COPY requirements2.txt .
-RUN pip3 --no-cache-dir install -r requirements2.txt
 
 RUN apt-get update && apt-get install -y ffmpeg
 
