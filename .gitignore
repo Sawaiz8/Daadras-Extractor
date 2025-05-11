@@ -52,4 +52,13 @@ coverage.xml
 *.pot
 
 backend/
+*.ipynb_checkpoints
+pyrightconfig.json
+pages/__pycache__
+google_connector/__pycache__
+.streamlit/secrets.toml
+google_drive_downloader.log
+*.pdf
+*.csv
 .env
+__pycache__/
