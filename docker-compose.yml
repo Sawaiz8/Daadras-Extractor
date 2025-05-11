@@ -25,13 +25,13 @@ services:
       - mongo
   
   assessment_dashboard:
-    build: services/assessment_dashboard
+    build: .
     command: sh ./docker-entrypoint.sh
     container_name: assessment_dashboard
     ports:
       - $STREAMLIT_PORT:$STREAMLIT_PORT
     volumes:
-      - ./services/assessment_dashboard:/app
+      - ./:/app
     depends_on:
       - mongo
     environment:
